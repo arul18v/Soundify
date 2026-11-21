@@ -14,20 +14,20 @@ button,input{font:inherit}button{cursor:pointer;border:0;color:inherit}.app{max-
 </head>
 <body>
 <div class="app">
-<header class="top"><div class="brand"><span class="logo">S</span> Soundify</div><small>Your music. Your space.</small></header>
+<header class="top"><div class="brand"><span class="logo">S</span> Soundify</div><small>Tamil music first. Your space.</small></header>
 <div class="layout">
 <aside class="sidebar">
 <nav class="nav"><button class="active" data-view="all">⌂ &nbsp; Home</button><button data-view="search">⌕ &nbsp; Search</button><button data-view="liked">♥ &nbsp; Liked</button></nav>
 <div class="sidehead"><h3>YOUR LIBRARY</h3><button class="add" id="addSide" aria-label="Add music">+</button></div>
-<p class="hint">Add audio files from your device. They stay on your device.</p>
+<p class="hint">Your personal collection. Import audio you own or have permission to play.</p>
 <button class="subtle" id="playlistBtn">＋ Create playlist</button>
 <div id="playlistList"></div>
 </aside>
 <main class="main">
-<section class="hero"><p>YOUR PERSONAL MUSIC SPACE</p><h1>Good music. No noise.</h1><p>Bring your own tracks and build your library.</p><button class="primary" id="uploadHero">＋ Add music</button></section>
-<section class="tamilbox"><h2>🇮🇳 Tamil Free Music</h2><p class="hint">Tamil-language independent tracks that are licensed for streaming. Mainstream film songs are not included unless their rights holders authorize it.</p><div class="tamilcontrols"><input id="jamendoId" placeholder="Jamendo Client ID"><button class="primary" id="saveJamendo">Save ID</button><button class="subtle" id="tamilSearch">Find Tamil songs</button></div><div id="tamilStatus" class="hint">Add your free Jamendo Client ID to load the Tamil catalogue.</div><div id="tamilResults" class="tamilresults"></div></section><div class="tools"><input class="search" id="search" placeholder="Search your library…" aria-label="Search music"><button class="subtle" id="sortBtn">Recently added</button></div>
+<section class="hero"><p>SOUNDIFY · TAMIL MUSIC</p><h1>Tamil hits. One home.</h1><p>Discover Tamil-language independent music and play your own collection.</p><button class="primary" id="uploadHero">＋ Add local music</button></section>
+<section class="tamilbox"><h2>🇮🇳 Made for Tamil listeners</h2><p class="hint">Explore Tamil-language tracks available for legal streaming. Popular film soundtracks can be added only when the rights holders provide access.</p><div class="tamilcontrols"><input id="jamendoId" placeholder="Jamendo Client ID"><input id="tamilQuery" placeholder="Search Tamil tracks or artists"><button class="primary" id="saveJamendo">Save ID</button><button class="subtle" id="tamilSearch">Search Tamil music</button></div><div id="tamilStatus" class="hint">Add your free Jamendo Client ID to load the Tamil catalogue.</div><div id="tamilResults" class="tamilresults"></div></section><div class="tools"><input class="search" id="search" placeholder="Search your library…" aria-label="Search music"><button class="subtle" id="sortBtn">Recently added</button></div>
 <div class="sectionhead"><h2 id="heading">Your library</h2><span class="hint" id="count">0 tracks</span></div>
-<div id="tracks" class="tracklist"><div class="empty"><div style="font-size:32px">♫</div><b>Your library is waiting</b><p>Add music files from your phone or computer to start listening.</p><button class="primary" id="emptyUpload">Choose music</button></div></div>
+<div id="tracks" class="tracklist"><div class="empty"><div style="font-size:32px">♫</div><b>Your soundtrack starts here</b><p>Search Tamil music above, or add audio files from your device.</p><button class="primary" id="emptyUpload">Add your music</button></div></div>
 <p class="mobile-note hint">Tip: install Soundify from your browser menu using “Add to Home screen”.</p>
 </main>
 </div>
@@ -64,18 +64,18 @@ async function searchTamilFree(){
  localStorage.setItem('soundify_jamendo_id',id);
  $('tamilStatus').textContent='Loading Tamil tracks…';$('tamilResults').innerHTML='';
  try{
-  const url='https://api.jamendo.com/v3.0/tracks/?client_id='+encodeURIComponent(id)+'&format=json&limit=25&lang=ta&audioformat=mp32&include=licenses,musicinfo&order=popularity_total';
+  const term=$('tamilQuery').value.trim(); const params=new URLSearchParams({client_id:id,format:'json',limit:'30',lang:'ta',audioformat:'mp32',include:'licenses,musicinfo',order:'popularity_total'}); if(term) params.set('search',term); const url='https://api.jamendo.com/v3.0/tracks/?'+params.toString();
   const res=await fetch(url);if(!res.ok)throw new Error('API request failed');
   const data=await res.json();const items=data.results||[];
-  if(!items.length){$('tamilStatus').textContent='No Tamil-language tracks found in this free catalogue right now. Try again later.';return}
+  if(!items.length){$('tamilStatus').textContent='No matching Tamil-language tracks found in this catalogue. Try another search.';return}
   $('tamilStatus').textContent=items.length+' Tamil tracks found. Independent / Creative Commons catalogue.';
-  $('tamilResults').innerHTML=items.map((t,i)=>'<div class="tamiltrack"><div class="cover">♫</div><div class="info"><b>'+esc(t.name||'Untitled')+'</b><small>'+esc(t.artist_name||'Unknown artist')+' · Jamendo</small></div><button data-tamilplay="'+i+'">Play</button>'+(t.audiodownload_allowed&&t.audiodownload?'<a class="subtle" href="'+esc(t.audiodownload)+'" download target="_blank" rel="noopener">Download</a>':'')+'</div>').join('');
+  $('tamilResults').innerHTML=items.map((t,i)=>'<div class="tamiltrack">'+(t.image?'<img src="'+esc(t.image)+'" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:7px">':'<div class="cover">♫</div>')+'<div class="info"><b>'+esc(t.name||'Untitled')+'</b><small>'+esc(t.artist_name||'Unknown artist')+' · Jamendo</small></div><button data-tamilplay="'+i+'">Play</button>'+(t.audiodownload_allowed&&t.audiodownload?'<a class="subtle" href="'+esc(t.audiodownload)+'" download target="_blank" rel="noopener">Download</a>':'')+'</div>').join('');
   $('tamilResults').querySelectorAll('[data-tamilplay]').forEach(b=>b.onclick=()=>{const t=items[+b.dataset.tamilplay];audio.src=t.audio;audio.play().catch(()=>{});$('nowTitle').textContent=t.name||'Tamil track';$('nowArtist').textContent=(t.artist_name||'Unknown artist')+' · Jamendo';$('toggle').textContent='Ⅱ';});
  }catch(e){$('tamilStatus').textContent='Could not load tracks. Check your Client ID and internet connection.'}
 }
 $('jamendoId').value=localStorage.getItem('soundify_jamendo_id')||'';
 $('saveJamendo').onclick=()=>{localStorage.setItem('soundify_jamendo_id',$('jamendoId').value.trim());$('tamilStatus').textContent='Client ID saved on this device.'};
-$('tamilSearch').onclick=searchTamilFree;
+$('tamilSearch').onclick=searchTamilFree; $('tamilQuery').addEventListener('keydown',e=>{if(e.key==='Enter')searchTamilFree()});
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 render();
